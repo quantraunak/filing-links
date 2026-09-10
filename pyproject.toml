@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pit-equity-research"
+name = "filing-links"
 version = "0.1.0"
-description = "Bias fingerprinting for factor research, plus a point-in-time economic-link extraction protocol, on one point-in-time US equity substrate"
+description = "A construction protocol for point-in-time firm-relationship graphs from SEC filing text: benchmark, extraction frontier, and dated edges"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

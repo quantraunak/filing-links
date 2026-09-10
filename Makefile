@@ -1,26 +1,23 @@
 install:
 	pip install -r requirements.txt
 
-universe:
-	python project/scripts/build_universe.py --source sp500_wikipedia_snapshot
-
 test:
 	pytest -q project/tests
 
-run:
-	python project/run_backtest.py --config project/configs/default.yaml
+# The extraction frontier, regenerated from cached responses. No GPU, no network.
+frontier:
+	cd project && python scripts/benchmark_table.py
 
-# Reproduces docs/BIAS.md end to end.
-bias: bias-dating bias-survivorship
+# Claims -> resolved, dated edges with validity intervals.
+graph:
+	cd project && python scripts/build_graph.py
 
-bias-dating:
-	cd project && python scripts/pit_vs_naive.py
-
-bias-survivorship:
-	cd project && python scripts/survivorship.py
+# The pre-registered signal test. Runs once, when the corpus is complete.
+signal:
+	cd project && python scripts/run_signal_test.py
 
 # Writes the redistributable point-in-time layer to project/dist/.
 dataset:
 	cd project && python scripts/export_dataset.py
 
-.PHONY: install universe test run bias bias-dating bias-survivorship dataset
+.PHONY: install test frontier graph signal dataset
