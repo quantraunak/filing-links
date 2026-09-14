@@ -1,20 +1,22 @@
 # Pinned environment for reproducing the published runs.
-# For library use install the package instead: pip install -e ".[dev,prices,model,portfolio]"
+#
+# Scoped to what this repository actually imports. It previously carried the
+# parent project's portfolio stack -- cvxpy, quantstats, matplotlib,
+# pandas-datareader -- none of which appear anywhere here, while omitting
+# pydantic, which src/graph/extract.py imports at module level. CI had been red
+# since 2026-09-12 for exactly that reason: the code ran locally only because
+# pydantic happened to be installed globally.
 
 numpy==1.26.4
 pandas==2.2.3
-pyarrow==17.0.0
+pyarrow==17.0.0          # pandas parquet engine; 14 modules read or write parquet
 scipy==1.13.1
-scikit-learn==1.5.2
-cvxpy==1.5.3
-lightgbm>=4.0.0
-yfinance>=1.5.2
-pandas-datareader==0.10.0
-matplotlib==3.9.2
-quantstats==0.0.62
+pydantic==2.9.2          # extraction response schema
+scikit-learn==1.5.2      # src/model/estimators.py
+lightgbm>=4.0.0          # src/model/estimators.py
+yfinance>=1.5.2          # price panel for the signal test
 pyyaml==6.0.2
 requests==2.32.3
 beautifulsoup4==4.12.3
 lxml==5.3.0
-tqdm==4.66.4
 pytest==8.3.2
