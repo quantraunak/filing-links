@@ -1,23 +1,112 @@
 # Point-in-Time Economic Links from Filing Text
 
-**A construction protocol for dated firm-relationship graphs, with the benchmark and
-cost frontier needed to build one.**
+**A local 30B model extracts 5,461 customer/supplier relationships from 1,989 S&P 500
+10-Ks, yielding a point-in-time graph of 1,185 edges over 125 source firms. That graph
+covers a median of 27 names per date — 6.4% of the tradable cross-section, against the
+~145 needed to test whether returns propagate along the links. The pre-registered coverage
+gate fires and the return study stops, unrun.**
 
-Companies name each other in their 10-Ks. *"Intel is one of our most significant
-customers."* *"We purchase substrates from Ibiden and Unimicron."* Nobody sells a map of
-those disclosures: the vendor supply-chain products cover the large, obvious links, and
-the academic text-based networks measure product-description *similarity* rather than
-stated relationships.
+**Why it stops there is the finding.** Regulation S-K compels a filer to disclose customers
+exceeding 10% of revenue and imposes no matching duty for suppliers. Disclosure is
+asymmetric, so extracting the S&P 500 extracts the side of the relationship that is not
+required to speak: 668 customer claims against 241 supplier claims, and roughly 45% of
+filings naming no counterparty at all.
 
-What does not exist publicly is the graph as a *point-in-time historical series*. The
-nearest published work extracts firm networks from filings for 42 firms in a single
-fiscal year. This targets 160 issuers across 2012–2025, with every edge keyed to the date
-it was disclosed and carrying a validity interval, so the graph can be asked what it
-looked like on any past date.
+## Objective
 
-The protocol has three parts.
+Build the firm-relationship graph that does not exist publicly as a dated historical
+series, and measure honestly whether it is dense enough to support the asset-pricing
+question it was built for.
+
+## Hypothesis
+
+Pre-registered in [`docs/HYPOTHESIS.md`](docs/HYPOTHESIS.md): returns propagate along
+supply-chain links with a delay, because investors do not track links that no database
+makes visible. The falsification table was fixed before any data existed, including a
+coverage gate — if the extracted graph cannot support a cross-sectional rank correlation,
+the study ends at the coverage report rather than proceeding to a weaker test.
+
+## Result
+
+| quantity | measured | projected |
+|---|---|---|
+| validated claims | 5,461 from 1,086 of 1,976 filings | — |
+| claims resolving to a listed ticker | 33.0% | 42.8% |
+| source firms | 125 | ~145 |
+| **covered names per date (median)** | **27 (6.4%)** | **~145** |
+
+At n ≈ 27 the standard error on mean IC is ~0.016, so the falsification table's `t > 2.0`
+would require IC ≥ 0.032 — roughly double the published customer-supplier spillover
+effects. The test is runnable and uninformative, so it was not run.
+
+**Four explanations for the shortfall were proposed and each refuted against cached data
+before anything was changed:**
+
+| hypothesis | test | verdict |
+|---|---|---|
+| the resolver regressed | re-ran it on the E5 cache | refuted, 42.9% against a 42.8% baseline |
+| validation silently drops claims | compared empty-filing rate across two models | refuted, 54% vs 55% |
+| the cheaper model collapsed recall | paired both models on 154 shared filings | refuted, yield ratio 0.97 |
+| coverage saturates with volume | subsampled the corpus | refuted, 10.1× filings returns 9.8× coverage |
+
+Coverage is **linear** in extraction volume with no curvature, despite real concentration
+(top 25 targets take 49.5% of edges; 182 of 263 targets are named by a single source firm).
+The cap is the size of the filing universe, not diminishing returns within it.
+
+## Framework proposed
+
+A construction protocol that reports where it runs out, which the commercial supply-chain
+datasets do not. Four parts: a benchmark with **auditable negatives** (every excluded name
+recorded against a stated rule, not taste); a measured **cost/quality frontier** across ten
+extractor configurations; **verbatim-substring validation**, so a claim survives only if its
+evidence appears literally in the source; and a **pre-registered coverage gate** that ends
+the study rather than weakening the test.
+
+The transferable design lesson: link-graph coverage is bought on the **supplier** side.
+Small firms naming large customers is what Reg S-K compels; large firms naming anyone is
+not. 2,261 filings from 181 such issuers are already downloaded and screened here,
+unextracted.
+
+## Data
+
+| | |
+|---|---|
+| **Source** | SEC EDGAR 10-K filings, fetched per user rather than redistributed |
+| **Corpus** | 1,989 filings, 160 S&P 500 issuers, filed 2012-06-30 onward |
+| **Model** | `qwen3:30b-a3b`, local via ollama, temperature 0, 13s/filing |
+| **Benchmark** | 10 hand-annotated filings, exclusions recorded by rule in [`docs/gold_exclusions.md`](docs/gold_exclusions.md) |
+| **Extraction run** | 2026-09-09 13:58 → 2026-09-10 11:40, 21.7h, zero restarts |
+| **Released** | Point-in-time fundamentals layer and membership spells, CC BY 4.0 |
+
+## Limitations
+
+The benchmark is 10 filings and single-annotated; `scripts/annotator_agreement.py` exists
+and is unused, so the labels are reproducible but not validated. F1 0.792 at the corpus
+configuration means roughly one claim in five is wrong. The resolver is deliberately
+conservative and refuses ambiguous single tokens, so `Apple` does not resolve. A large
+share of named counterparties are structurally unlistable — `U.S. Government` alone appears
+103 times, alongside sovereigns and unlisted foreign firms — and no resolver improvement
+reaches those.
+
+## Reproduce
+
+```bash
+make install
+make test
+cd project && python3 scripts/extract_corpus.py --model qwen3:30b-a3b --no-think --rebuild-only
+```
+
+## Value
+
+A dated firm-relationship graph with per-edge verbatim evidence, released with the coverage
+report attached. The commercial supply-chain datasets publish neither their point-in-time
+properties nor their coverage ceiling. Anyone planning to build one of these from filing
+text should read the disclosure-asymmetry section first: it predicts, before any extraction
+runs, which side of the corpus is worth the GPU time.
 
 ---
+
+# Detail
 
 ## 1. A benchmark with auditable negatives
 
